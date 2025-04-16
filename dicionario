@@ -1,0 +1,78 @@
+
+=============================================
+= VARIÁVEIS DO ANALISADOR LÉXICO E SINTÁTICO =
+=============================================
+
+ANALISADOR LÉXICO:
+
+1. tabelaSimbolos (Map<String, Simbolo>)
+   - Armazena todos os tokens encontrados
+   - Formato: {"lexema": Simbolo("TIPO_NUM", valor)}
+   - Exemplo: {"int": Simbolo("RESERVADA_1", null)}
+
+2. contadorGlobalTokens (int)
+   - Contador sequencial para numerar tokens
+   - Incrementado a cada novo token adicionado
+
+3. palavrasReservadas (List<String>)
+   - Lista de palavras-chave da linguagem LC
+   - Exemplo: ["int", "while", "if", "begin", "end"]
+
+4. lexemaAtual (StringBuilder)
+   - Acumula caracteres para formar tokens
+   - Métodos principais: append(), toString(), setLength(0)
+
+5. Flags de Estado:
+   - dentroString (boolean): em texto entre aspas
+   - dentroComentarioBloco (boolean): em /* */
+   - dentroComentarioLinha (boolean): em //
+   - delimitadorString (char): tipo de aspas (' ou ")
+
+ANALISADOR SINTÁTICO:
+
+1. tokens (List<String>)
+   - Lista de tokens gerada pelo léxico
+   - Exemplo: ["int", "x", ";", "begin", ...]
+
+2. posicaoAtual (int)
+   - Índice do token sendo analisado
+   - Avanço com posicaoAtual++
+
+3. declaracoesConcluidas (boolean)
+   - Indica se a seção de declarações foi processada
+
+CLASSE SIMBOLO:
+
+1. token (String)
+   - Identificador do token (ex: "RESERVADA_1")
+
+2. valor (Object)
+   - Valor associado (números, strings, etc.)
+
+FLUXO DE PROCESSAMENTO:
+
+1. Léxico:
+   - Lê caracteres → forma tokens
+   - Preenche tabelaSimbolos
+   - Gera lista tokens ordenada
+
+2. Sintático:
+   - Recebe lista tokens
+   - Verifica estrutura usando posicaoAtual
+   - Gera mensagens de erro
+
+EXEMPLO PRÁTICO:
+
+Código: "int x = 10;"
+
+Léxico:
+1. "int" → RESERVADA_1
+2. "x" → ID_2
+3. "=" → RESERVADA_5
+4. "10" → CONST_3
+5. ";" → RESERVADA_X
+
+Sintático:
+1. Verifica "int" como declaração
+2. Valida estrutura: tipo ID = valor;
+
