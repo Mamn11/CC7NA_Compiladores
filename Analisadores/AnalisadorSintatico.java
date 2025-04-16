@@ -1,3 +1,4 @@
+package Analisadores;
 import java.util.List;
 
 public class AnalisadorSintatico {
@@ -35,14 +36,7 @@ public class AnalisadorSintatico {
     }
 
 
-    private void pularCabecalho() {
-        while (posicaoAtual < tokens.size() && !tokens.get(posicaoAtual).equals("*/")) {
-            posicaoAtual++;
-        }
-        if (posicaoAtual < tokens.size() && tokens.get(posicaoAtual).equals("*/")) {
-            posicaoAtual++;
-        }
-    }
+  
 
 
 

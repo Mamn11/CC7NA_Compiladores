@@ -1,3 +1,4 @@
+package Analisadores;
 public class Simbolo {
     String token;
     Object bytes;

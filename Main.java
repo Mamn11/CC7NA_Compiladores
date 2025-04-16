@@ -1,6 +1,9 @@
 import java.io.*;
 import java.util.*;
 
+import Analisadores.AnalisadorLexico;
+import Analisadores.AnalisadorSintatico;
+
 public class Main {
     public static void main(String[] args) {
         String caminhoArquivo = "C:/Users/mamn2/OneDrive/Documentos/Compiladores/codigo-fonte2.lc";
