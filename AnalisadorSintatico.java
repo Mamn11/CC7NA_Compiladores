@@ -7,7 +7,14 @@ public class AnalisadorSintatico {
     private final Iterator<String> iterator;
     private String tokenAtual;
     private boolean erroSintatico = false;
-    private final Map<String, String> tabelaSimbolos = new HashMap<>();
+    private Map<String, String> tabelaSimbolos = new HashMap<>();
+
+
+    // Retorna a tabela de símbolos para uso no semântico
+    public Map<String, String> getTabelaSimbolos() {
+        return tabelaSimbolos;
+    }
+
 
     public AnalisadorSintatico(List<String> tokens) {
         this.iterator = tokens.iterator();
@@ -397,4 +404,10 @@ public class AnalisadorSintatico {
             erroSintatico = true;
         }
     }
+
+    public void setTabelaSimbolos(Map<String, String> tabelaSimbolos) {
+        this.tabelaSimbolos = tabelaSimbolos;
+    }
+
+
 }

@@ -6,4 +6,8 @@ public class Simbolo {
         this.token = token;
         this.bytes = bytes;
     }
+
+    public Object getBytes() {
+        return bytes;
+    }
 }
