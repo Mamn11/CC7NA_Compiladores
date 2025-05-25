@@ -1,20 +1,19 @@
-import java.io.*;
-import java.util.*;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        String caminhoArquivo = "C:/Users/mamn2/OneDrive/Documentos/Compiladores/codigo-fonte2.lc";
-
-        // 1. Análise Léxica
-        List<String> tokens = AnalisadorLexico.analisar(caminhoArquivo);
+        // 1. Análise léxica
+        List<String> tokens = AnalisadorLexico.analisar("C:/Users/geova/OneDrive/Documentos/Estudos/Compiladores/CC7NA_Compiladores/Codigo Fonte/codigo-fonte.lc");
         AnalisadorLexico.exibirTabela();
-
-        // 2. Análise Sintática
+        
+        // 2. Análise sintática
         AnalisadorSintatico analisador = new AnalisadorSintatico(tokens);
-        analisador.analisar();
-
-        // 3. Exibir tokens encontrados (para depuração)
-        System.out.println("\nTokens na ordem de aparecimento:");
-        System.out.println(tokens);
+        boolean sucesso = analisador.analisar();
+        
+        if (sucesso) {
+            System.out.println("Análise sintática concluída com sucesso!");
+        } else {
+            System.out.println("Erros encontrados na análise sintática");
+        }
     }
 }

@@ -1,0 +1,48 @@
+PROGRAMA -> DECLARACOES CODIGO
+
+DECLARACOES -> DECLARACAO DECLARACOES | ε
+
+DECLARACAO -> TIPO ID ';'
+            | TIPO ID '=' (CONST_INT | CONST_boolean | CONST_STRING) ';'
+            | 'final' TIPO ID '=' (CONST_INT | CONST_boolean | CONST_STRING) ';'
+
+TIPO -> 'string' | 'int' | 'byte' | 'boolean'
+
+CODIGO -> 'begin' COMANDOS 'end'
+
+COMANDOS -> COMANDO COMANDOS | ε
+
+COMANDO -> ESCREVE
+          | LER
+          | ATRIBUICAO
+          | CONDICIONAL
+          | LOOP
+          | COMENTARIO
+
+ESCREVE -> ('write' | 'writeln') ',' (EXPRESSAO | CONST_STRING) ';'
+
+LER -> ('read' | 'readln') ',' ID ';'
+
+ATRIBUICAO -> ID '=' EXPRESSAO ';'
+
+CONDICIONAL -> 'if' '(' EXPRESSAO_LOGICA ')' 'begin' COMANDOS 'end' ('else' 'begin' COMANDOS 'end')?
+             | 'if' EXPRESSAO_LOGICA COMANDO
+
+LOOP -> 'while' '(' EXPRESSAO_LOGICA ')' 'begin' COMANDOS 'end'
+      | 'while' EXPRESSAO_LOGICA COMANDO
+
+EXPRESSAO -> TERMO (OP_ARIT TERMO)*
+EXPRESSAO_LOGICA -> EXPRESSAO OP_REL EXPRESSAO
+                  | 'true' | 'false'
+
+TERMO -> ID | CONST_INT | CONST_STRING | '(' EXPRESSAO ')'
+
+OP_ARIT -> '+' | '-' | '*' | '/'
+OP_REL -> '<' | '>' | '<=' | '>=' | '==' | '!='
+
+COMENTARIO -> '{' TEXTO '}' | '/*' TEXTO '*/'
+
+ID -> [a-zA-Z_][a-zA-Z0-9_]*
+CONST_INT -> [0-9]+
+CONST_STRING -> '"' [^"]* '"'
+CONST_boolean -> 'true' | 'false'
