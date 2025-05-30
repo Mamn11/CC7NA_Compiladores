@@ -12,25 +12,22 @@ public class Main {
             List<String> tokens = AnalisadorLexico.analisar(caminhoArquivo);
             AnalisadorLexico.exibirTabela();
             
-            // Análise Sintática
-            System.out.println("\n[2/3] Executando análise sintática...");
+            // Análise Sintática e Semântica 
+            System.out.println("\n[2/2] Executando análises...");
             AnalisadorSintatico analisador = new AnalisadorSintatico(tokens);
             boolean sucessoSintatico = analisador.analisar();
             
             if (!sucessoSintatico) {
-                System.out.println("\n=== ANÁLISE CONCLUÍDA COM ERROS SINTÁTICOS ===");
+                System.out.println("\n=== ANÁLISE CONCLUÍDA COM ERROS  ===");
                 System.exit(1);
-            }
-            
-            // Análise Semântica
-            System.out.println("\n[3/3] Executando análise semântica...");
-            AnalisadorSemantico semantico = new AnalisadorSemantico(analisador.getTabelaSimbolos(), tokens);
-            boolean sucessoSemantico = semantico.analisar();
-            if (sucessoSemantico) {
-                System.out.println("\n=== ANÁLISE CONCLUÍDA COM SUCESSO ===\n\n===        PROGRAMA VÁLIDO        ===\n\n");
-            } else {     
-                System.out.println("\n=== ANÁLISE CONCLUÍDA COM ERROS SEMÂNTICOS ===");
-                System.exit(1);
+            }else {
+                System.out.println("\n=== ANÁLISE SINTÁTICA CONCLUÍDA COM SUCESSO ===");
+                
+                GeradorAssembly gerador = new GeradorAssembly(analisador.getTabelaSimbolos(), tokens);
+                String codigoAssembly = gerador.gerar();
+                System.out.println("\n=== Assembly Gerado ===\n" + codigoAssembly);
+                
+                System.out.println("\n===              FIM DA ANÁLISE             ===\n");
             }
 
         } catch (Exception e) {
