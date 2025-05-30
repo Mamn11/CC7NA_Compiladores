@@ -4,30 +4,26 @@ import java.util.List;
 import java.util.Map;
 
 public class AnalisadorSintatico {
+    // ========== ATRIBUTOS ==========
     private final Iterator<String> iterator;
     private String tokenAtual;
     private boolean erroSintatico = false;
-    private Map<String, String> tabelaSimbolos = new HashMap<>();
+    private final Map<String, String> tabelaSimbolos;
+    
+    private int numeroLinha = 1;
+    private int posicaoToken = 0;
+    private int posicaoLinha = 1;
 
-
-    // Retorna a tabela de símbolos para uso no semântico
-    public Map<String, String> getTabelaSimbolos() {
-        return tabelaSimbolos;
-    }
-
-
+    // ========== CONSTRUTOR ==========
     public AnalisadorSintatico(List<String> tokens) {
         this.iterator = tokens.iterator();
+        this.tabelaSimbolos = inicializarTabelaSimbolos();
         this.avancar();
-        
-        // Inicializa tabela de símbolos com palavras reservadas
-        tabelaSimbolos.put("int", "TIPO");
-        tabelaSimbolos.put("string", "TIPO");
-        tabelaSimbolos.put("boolean", "TIPO");
-        tabelaSimbolos.put("byte", "TIPO");
-        tabelaSimbolos.put("final", "MODIFICADOR");
-        tabelaSimbolos.put("true", "BOOLEAN");
-        tabelaSimbolos.put("false", "BOOLEAN");
+    }
+
+    // ========== MÉTODOS PÚBLICOS ==========
+    public Map<String, String> getTabelaSimbolos() {
+        return tabelaSimbolos;
     }
 
     public boolean analisar() {
@@ -35,9 +31,32 @@ public class AnalisadorSintatico {
         return !erroSintatico && tokenAtual == null;
     }
 
+    // ========== INICIALIZAÇÃO ==========
+    private Map<String, String> inicializarTabelaSimbolos() {
+        Map<String, String> tabela = new HashMap<>();
+        // Palavras reservadas
+        tabela.put("int", "TIPO");
+        tabela.put("string", "TIPO");
+        tabela.put("boolean", "TIPO");
+        tabela.put("byte", "TIPO");
+        tabela.put("final", "MODIFICADOR");
+        tabela.put("true", "BOOLEAN");
+        tabela.put("false", "BOOLEAN");
+        return tabela;
+    }
+
+    // ========== MANIPULAÇÃO DE TOKENS ==========
     private void avancar() {
         if (iterator.hasNext()) {
             tokenAtual = iterator.next();
+            posicaoToken++;
+            
+            if (tokenAtual.equals("\n")) {
+                numeroLinha++;
+                posicaoLinha = 1;
+            } else {
+                posicaoLinha += tokenAtual.length();
+            }
         } else {
             tokenAtual = null;
         }
@@ -48,8 +67,7 @@ public class AnalisadorSintatico {
             avancar();
             return true;
         }
-        System.err.println("Erro sintático: esperado '" + esperado + "', encontrado '" + tokenAtual + "'");
-        erroSintatico = true;
+        reportarErroSintatico(esperado, tokenAtual);
         return false;
     }
 
@@ -57,6 +75,7 @@ public class AnalisadorSintatico {
         return tokenAtual != null && tokenAtual.equals(esperado);
     }
 
+    // ========== VERIFICAÇÕES ==========
     private boolean verificarTipo() {
         return verificar("string") || verificar("int") || verificar("byte") || verificar("boolean");
     }
@@ -71,6 +90,34 @@ public class AnalisadorSintatico {
                verificar(">=") || verificar("==") || verificar("!=");
     }
 
+    private boolean ehIdentificadorValido() {
+        return tokenAtual != null && tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*");
+    }
+
+    private String determinarTipoConstante(String valor) {
+        if (valor.matches("[0-9]+")) return "INT";
+        if (valor.matches("\".*\"")) return "STRING";
+        if (valor.equals("true") || valor.equals("false")) return "BOOLEAN";
+        return "CONSTANTE";
+    }
+
+    // ========== RELATÓRIO DE ERROS ==========
+    private void reportarErroSintatico(String esperado, String encontrado) {
+        System.err.printf("[ERRO SINTÁTICO] Linha %d:%d - Esperado: %s, Encontrado: %s%n",
+                        numeroLinha, posicaoLinha,
+                        esperado,
+                        encontrado != null ? "'" + encontrado + "'" : "fim de arquivo");
+        erroSintatico = true;
+    }
+
+    private void reportarErroSemantico(String mensagem, String contexto) {
+        System.err.printf("[ERRO SEMÂNTICO] - %s: %s%n",
+                        mensagem,
+                        contexto);
+        erroSintatico = true;
+    }
+
+    // ========== REGRAS GRAMATICAIS PRINCIPAIS ==========
     private void programa() {
         declaracoes();
         codigo();
@@ -82,83 +129,72 @@ public class AnalisadorSintatico {
         }
     }
 
+    // ========== DECLARAÇÕES ==========
     private void declaracao() {
-        boolean ehFinal = verificar("final");
-        if (ehFinal) {
-            avancar(); // consome 'final'
-            
-            // Aceita tanto 'final TIPO ID' quanto 'final ID' (com tipo inferido)
-            if (verificarTipo()) {
-                avancar(); // consome o tipo (se presente)
-            }
-            
-            if (tokenAtual == null || !tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
-                System.err.println("Erro: identificador esperado após 'final'");
-                erroSintatico = true;
-                return;
-            }
-            
-            // Adiciona à tabela de símbolos
-            String id = tokenAtual;
-            tabelaSimbolos.put(id, "CONSTANTE");
-            avancar(); // consome ID
-            
-            if (!verificar("=")) {
-                System.err.println("Erro: esperado '=' na declaração final");
-                erroSintatico = true;
-                return;
-            }
-            avancar(); // consome '='
-            
-            if (!verificarConstante()) {
-                System.err.println("Erro: valor constante esperado");
-                erroSintatico = true;
-                return;
-            }
-            avancar(); // consome o valor
-            
-            if (!verificar(";")) {
-                System.err.println("Erro: esperado ';' no final");
-                erroSintatico = true;
-                return;
-            }
-            avancar(); // consome ';'
-        } 
-        else if (verificarTipo()) {
-            // Declaração de variável normal
-            String tipo = tokenAtual;
-            avancar(); // consome tipo
-            
-            if (tokenAtual == null || !tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
-                System.err.println("Erro: identificador esperado após tipo");
-                erroSintatico = true;
-                return;
-            }
-            
-            // Adiciona à tabela de símbolos
-            String id = tokenAtual;
-            tabelaSimbolos.put(id, tipo.toUpperCase());
-            avancar(); // consome ID
-            
-            if (verificar("=")) {
-                avancar(); // consome '='
-                if (!verificarConstante()) {
-                    System.err.println("Erro: valor constante esperado");
-                    erroSintatico = true;
-                    return;
-                }
-                avancar(); // consome valor
-            }
-            
-            if (!verificar(";")) {
-                System.err.println("Erro: esperado ';' no final");
-                erroSintatico = true;
-                return;
-            }
-            avancar(); // consome ';'
+        if (verificar("final")) {
+            declaracaoConstante();
+        } else if (verificarTipo()) {
+            declaracaoVariavel();
         }
     }
 
+    private void declaracaoConstante() {
+        avancar(); // consome 'final'
+        
+        String tipo = verificarTipo() ? tokenAtual : null;
+        if (tipo != null) {
+            avancar(); // consome o tipo
+        }
+        
+        if (!ehIdentificadorValido()) {
+            reportarErroSintatico("identificador", tokenAtual);
+            return;
+        }
+        
+        String id = tokenAtual;
+        tabelaSimbolos.put(id, "CONSTANTE");
+        avancar(); // consome ID
+        
+        if (!consumir("=")) return;
+        
+        if (!verificarConstante()) {
+            reportarErroSintatico("valor constante", tokenAtual);
+            return;
+        }
+        
+        String valor = tokenAtual;
+        tabelaSimbolos.put(id, determinarTipoConstante(valor));
+        avancar(); // consome valor
+        
+        consumir(";");
+    }
+
+    private void declaracaoVariavel() {
+        String tipo = tokenAtual;
+        avancar(); // consome tipo
+        
+        if (!ehIdentificadorValido()) {
+            reportarErroSintatico("identificador", tokenAtual);
+            return;
+        }
+        
+        String id = tokenAtual;
+        tabelaSimbolos.put(id, tipo.toUpperCase());
+        avancar(); // consome ID
+        
+        if (verificar("=")) {
+            avancar(); // consome '='
+            if (!verificarConstante()) {
+                reportarErroSintatico("valor constante", tokenAtual);
+                return;
+            }
+            avancar(); // consome valor
+        }
+        
+        consumir(";");
+    }
+
+    // ========== ESTRUTURAS DE CONTROLE ==========
     private void codigo() {
         if (!consumir("begin")) return;
         comandos();
@@ -175,113 +211,117 @@ public class AnalisadorSintatico {
         if (tokenAtual == null) return;
         
         switch (tokenAtual) {
-            case "write", "writeln" -> escreve();
+            case "write", "writeln" -> escrever();
             case "read", "readln" -> ler();
             case "if" -> condicional();
             case "while" -> loop();
             case "{" -> comentarioChaves();
             case "/*" -> comentarioBloco();
             default -> {
-                if (tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+                if (ehIdentificadorValido()) {
                     atribuicao();
                 } else {
-                    System.err.println("Erro sintático: comando inválido '" + tokenAtual + "'");
-                    erroSintatico = true;
+                    reportarErroSintatico("comando válido", tokenAtual);
                     avancar();
                 }
             }
         }
     }
 
-    private void escreve() {
+    // ========== COMANDOS DE E/S ==========
+    private void escrever() {
         String comando = tokenAtual;
         avancar(); // consome write/writeln
         
-        if (!consumir(",")) {
-            return;
-        }
+        if (!consumir(",")) return;
         
-        // Processa argumentos
         do {
-            if (verificarConstante() || tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+            if (verificarConstante() || ehIdentificadorValido()) {
                 avancar();
             } else {
                 expressao();
             }
             
             if (!verificar(",")) break;
-            avancar(); // consome próxima vírgula
+            avancar();
         } while (true);
         
-        if (!verificar(";")) {
-            System.err.println("Erro sintático: esperado ';' após " + comando);
-            erroSintatico = true;
-            while (tokenAtual != null && !verificar(";")) {
-                avancar();
-            }
-            if (tokenAtual != null) avancar();
-        } else {
-            avancar(); // consome ';'
-        }
+        consumir(";");
     }
 
     private void ler() {
         String comando = tokenAtual;
         avancar(); // consome read/readln
         
-        if (!consumir(",")) {
-            return;
-        }
+        if (!consumir(",")) return;
         
-        if (tokenAtual == null || !tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
-            System.err.println("Erro sintático: identificador esperado após " + comando);
-            erroSintatico = true;
+        if (!ehIdentificadorValido()) {
+            reportarErroSintatico("identificador", tokenAtual);
             return;
         }
         avancar();
         
-        if (!verificar(";")) {
-            System.err.println("Erro sintático: esperado ';' após " + comando);
-            erroSintatico = true;
-            while (tokenAtual != null && !verificar(";")) {
-                avancar();
-            }
-            if (tokenAtual != null) avancar();
-        } else {
-            avancar(); // consome ';'
+        consumir(";");
+    }
+
+    // ========== ATRIBUIÇÕES ==========
+    private void atribuicao() {
+        String id = tokenAtual;
+        String tipoVar = tabelaSimbolos.get(id);
+
+        if (tipoVar == null) {
+            reportarErroSemantico("variável não declarada", id);
+        } else if ("CONSTANTE".equals(tipoVar)) {
+            reportarErroSemantico("não é permitido atribuir à constante", id);
         }
-    }
 
-   private void atribuicao() {
-    String id = tokenAtual;
-    String tipoVar = tabelaSimbolos.get(id);
+        avancar(); // consome ID
 
-    if (tipoVar == null) {
-        System.err.println("Erro: variável '" + id + "' não declarada");
-        erroSintatico = true;
-    }
+        if (!consumir("=")) return;
 
-    avancar(); // consome ID
+        StringBuilder expr = new StringBuilder();
+        boolean temRelacional = false;
+        boolean valorBooleano = false;
+        boolean valorInteiro = false;
+        boolean valorString = false;
 
-    if (!consumir("=")) {
-        return;
-    }
-
-    // Use expressaoLogica para permitir operadores relacionais
-    expressaoLogica();
-
-    if (!verificar(";")) {
-        System.err.println("Erro sintático: esperado ';' após atribuição");
-        erroSintatico = true;
         while (tokenAtual != null && !verificar(";")) {
+            String tokenExpr = tokenAtual;
+            expr.append(tokenExpr);
+
+            if (tokenExpr.matches("[0-9]+")) valorInteiro = true;
+            else if (tokenExpr.matches("\".*\"")) valorString = true;
+            else if (tokenExpr.equals("true") || tokenExpr.equals("false")) valorBooleano = true;
+            else if (ehOperadorRelacional()) temRelacional = true;
+
             avancar();
         }
-        if (tokenAtual != null) avancar();
-    } else {
-        avancar(); // consome ';'
-    }
-}
 
+        if (tipoVar != null) {
+            String exprStr = expr.toString();
+            switch (tipoVar) {
+                case "INT" -> {
+                    if (valorString || valorBooleano) {
+                        reportarErroSemantico("atribuição de tipo incompatível para int", exprStr);
+                    }
+                }
+                case "STRING" -> {
+                    if (valorInteiro || valorBooleano) {
+                        reportarErroSemantico("atribuição de tipo incompatível para string", exprStr);
+                    }
+                }
+                case "BOOLEAN" -> {
+                    if (!valorBooleano || temRelacional) {
+                        reportarErroSemantico("expressão inválida para booleano", exprStr);
+                    }
+                }
+            }
+        }
+
+        consumir(";");
+    }
+
+    // ========== ESTRUTURAS DE CONTROLE ==========
     private void condicional() {
         avancar(); // consome if
         
@@ -292,24 +332,21 @@ public class AnalisadorSintatico {
         
         expressaoLogica();
         
-        if (temParenteses && !consumir(")")) {
-            return;
+        if (temParenteses) {
+            consumir(")");
         }
         
         if (verificar("begin")) {
             avancar();
             comandos();
-            if (!consumir("end")) {
-                return;
-            }
+            if (!consumir("end")) return;
             
             if (verificar("else")) {
                 avancar();
                 if (verificar("begin")) {
                     avancar();
                     comandos();
-                    if (!consumir("end")) {
-                    }
+                    consumir("end");
                 } else {
                     comando();
                 }
@@ -329,20 +366,20 @@ public class AnalisadorSintatico {
         
         expressaoLogica();
         
-        if (temParenteses && !consumir(")")) {
-            return;
+        if (temParenteses) {
+            consumir(")");
         }
         
         if (verificar("begin")) {
             avancar();
             comandos();
-            if (!consumir("end")) {
-            }
+            consumir("end");
         } else {
             comando();
         }
     }
 
+    // ========== EXPRESSÕES ==========
     private void expressao() {
         termo();
         while (tokenAtual != null && (verificar("+") || verificar("-") || verificar("*") || verificar("/"))) {
@@ -361,37 +398,29 @@ public class AnalisadorSintatico {
 
     private void termo() {
         if (tokenAtual == null) {
-            System.err.println("Erro sintático: termo esperado, encontrado fim de arquivo");
-            erroSintatico = true;
+            reportarErroSintatico("termo válido", null);
             return;
         }
         
-        if (tokenAtual.matches("[a-zA-Z_][a-zA-Z0-9_]*") || 
-            tokenAtual.matches("[0-9]+") || 
-            tokenAtual.matches("\".*\"") || 
-            verificar("true") || verificar("false")) {
+        if (ehIdentificadorValido() || tokenAtual.matches("[0-9]+") || 
+            tokenAtual.matches("\".*\"") || verificar("true") || verificar("false")) {
             avancar();
         } else if (verificar("(")) {
             avancar();
             expressao();
-            if (!consumir(")")) {
-            }
+            consumir(")");
         } else {
-            System.err.println("Erro sintático: termo inválido '" + tokenAtual + "'");
-            erroSintatico = true;
-            avancar();
+            reportarErroSintatico("termo válido", tokenAtual);
         }
     }
 
+    // ========== COMENTÁRIOS ==========
     private void comentarioChaves() {
         avancar(); // consome '{'
         while (tokenAtual != null && !verificar("}")) {
             avancar();
         }
-        if (!consumir("}")) {
-            System.err.println("Erro: comentário não fechado com '}'");
-            erroSintatico = true;
-        }
+        consumir("}");
     }
 
     private void comentarioBloco() {
@@ -399,15 +428,6 @@ public class AnalisadorSintatico {
         while (tokenAtual != null && !verificar("*/")) {
             avancar();
         }
-        if (!consumir("*/")) {
-            System.err.println("Erro: comentário não fechado com '*/'");
-            erroSintatico = true;
-        }
+        consumir("*/");
     }
-
-    public void setTabelaSimbolos(Map<String, String> tabelaSimbolos) {
-        this.tabelaSimbolos = tabelaSimbolos;
-    }
-
-
 }
