@@ -431,3 +431,5 @@ public class AnalisadorSintatico {
         consumir("*/");
     }
 }
+
+// Fim do arquivo AnalisadorSintatico.java

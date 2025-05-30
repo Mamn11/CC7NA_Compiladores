@@ -22,11 +22,6 @@ public class Main {
                 System.exit(1);
             }else {
                 System.out.println("\n=== ANÁLISE SINTÁTICA CONCLUÍDA COM SUCESSO ===");
-                
-                GeradorAssembly gerador = new GeradorAssembly(analisador.getTabelaSimbolos(), tokens);
-                String codigoAssembly = gerador.gerar();
-                System.out.println("\n=== Assembly Gerado ===\n" + codigoAssembly);
-                
                 System.out.println("\n===              FIM DA ANÁLISE             ===\n");
             }
 
