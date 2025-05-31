@@ -12,6 +12,6 @@ begin
   while naoTerminou begin
     writeln,"Ola' ",nome;
     n=n+1;
-    naoTerminou=n<MAXITER;
+    if n>=MAXITER naoTerminou = false;
   end
 end

@@ -84,28 +84,27 @@ public class AnalisadorLexico {
                     lexemaAtual.append(c);
                     continue;
                 }
-                if (dentroString) {
-                    lexemaAtual.append(c);
-                    if (c == delimitadorString) {
-                        tokensEncontrados.add(lexemaAtual.toString());
-                        inserirNaTabela(lexemaAtual.toString(), "STRING");
-                        lexemaAtual.setLength(0);
-                        dentroString = false;
+
+                // --- INÍCIO DO AJUSTE PARA OPERADORES COMPOSTOS ---
+                // Verifica operadores de dois caracteres antes dos de um
+                if ((c == '>' || c == '<' || c == '=' || c == '!') && leitor.ready()) {
+                    leitor.mark(1);
+                    char prox = (char) leitor.read();
+                    String opComposto = "" + c + prox;
+                    if (opComposto.equals(">=") || opComposto.equals("<=") ||
+                        opComposto.equals("==") || opComposto.equals("!=")) {
+                        if (lexemaAtual.length() > 0) {
+                            processarLexema(lexemaAtual.toString(), tokensEncontrados);
+                            lexemaAtual.setLength(0);
+                        }
+                        tokensEncontrados.add(opComposto);
+                        inserirNaTabela(opComposto, "OP_REL");
+                        continue;
+                    } else {
+                        leitor.reset();
                     }
-                    continue;
                 }
-
-                if (c == '{') {
-                    dentroComentarioChaves = true;
-                    continue;
-                }
-
-                if (c == '"' || c == '\'') {
-                    dentroString = true;
-                    delimitadorString = c;
-                    lexemaAtual.append(c);
-                    continue;
-                }
+                // --- FIM DO AJUSTE PARA OPERADORES COMPOSTOS ---
 
                 if (Character.isWhitespace(c)) {
                     if (lexemaAtual.length() > 0) {
@@ -185,5 +184,8 @@ public class AnalisadorLexico {
                 });
 
         System.out.println("=".repeat(60));
-    }}
+    }
+}
+
+
 

@@ -1,11 +1,11 @@
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 public class AnalisadorSintatico {
     // ========== ATRIBUTOS ==========
-    private final Iterator<String> iterator;
+    private final ListIterator<String> iterator;
     private String tokenAtual;
     private boolean erroSintatico = false;
     private final Map<String, String> tabelaSimbolos;
@@ -16,7 +16,7 @@ public class AnalisadorSintatico {
 
     // ========== CONSTRUTOR ==========
     public AnalisadorSintatico(List<String> tokens) {
-        this.iterator = tokens.iterator();
+        this.iterator = tokens.listIterator();
         this.tabelaSimbolos = inicializarTabelaSimbolos();
         this.avancar();
     }
@@ -86,8 +86,8 @@ public class AnalisadorSintatico {
     }
 
     private boolean ehOperadorRelacional() {
-        return verificar("<") || verificar(">") || verificar("<=") || 
-               verificar(">=") || verificar("==") || verificar("!=");
+        return verificar(">=") || verificar("<=") || verificar("==") || verificar("!=")
+            || verificar(">") || verificar("<");
     }
 
     private boolean ehIdentificadorValido() {
@@ -218,7 +218,7 @@ public class AnalisadorSintatico {
             case "{" -> comentarioChaves();
             case "/*" -> comentarioBloco();
             default -> {
-                if (ehIdentificadorValido()) {
+                if (ehIdentificadorValido() && verificarProximo("=")) {
                     atribuicao();
                 } else {
                     reportarErroSintatico("comando válido", tokenAtual);
@@ -238,10 +238,13 @@ public class AnalisadorSintatico {
         do {
             if (verificarConstante() || ehIdentificadorValido()) {
                 avancar();
-            } else {
+            } else if (verificar("(")) {
                 expressao();
+            } else {
+                reportarErroSintatico("termo válido", tokenAtual);
+                avancar();
             }
-            
+
             if (!verificar(",")) break;
             avancar();
         } while (true);
@@ -430,6 +433,13 @@ public class AnalisadorSintatico {
         }
         consumir("*/");
     }
-}
 
-// Fim do arquivo AnalisadorSintatico.java
+    // Adicione este método auxiliar:
+    private boolean verificarProximo(String esperado) {
+        if (!iterator.hasNext()) return false;
+        String proximo = iterator.next();
+        // Volta o iterator para não consumir o token
+        ((java.util.ListIterator<String>) iterator).previous();
+        return esperado.equals(proximo);
+    }
+}
