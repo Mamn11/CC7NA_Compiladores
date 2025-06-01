@@ -8,7 +8,7 @@ Este projeto é um compilador para a linguagem LC, que traduz programas escritos
 
 - `Main.java` — Classe principal, ponto de entrada do compilador.
 - `AnalisadorLexico.java` — Responsável pela análise léxica.
-- `AnalisadorSintatico.java` — Responsável pela análise sintática.
+- `AnalisadorSintatico.java` — Responsável pela análise sintática e semântica.
 - `GeradorAssembly.java` — Responsável pela geração do código Assembly.
 - `Simbolo.java` — Classe de apoio para a tabela de símbolos.
 - `codigos-fonte/` — Pasta com exemplos de código-fonte LC.
