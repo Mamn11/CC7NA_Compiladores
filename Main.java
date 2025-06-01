@@ -1,9 +1,16 @@
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        String caminhoArquivo = "C:/Users/geova/OneDrive/Documentos/Estudos/Compiladores/CC7NA_Compiladores/Codigo Fonte/codigo-fonte.lc";
+        if (args.length < 2) {
+            System.out.println("Uso: java LC <arquivo_fonte.lc> <arquivo_saida.asm>");
+            System.exit(1);
+        }
+        String caminhoArquivo = args[0];
+        String nomeSaida = args[1];
         
         try {
             System.out.println("=== INÍCIO DA ANÁLISE ===");
@@ -34,6 +41,9 @@ public class Main {
                 System.out.println("\n[3/3] Gerando código Assembly...");
                 System.out.println("\n=== CÓDIGO ASSEMBLY ===\n");
                 System.out.println(codigoAssembly);
+                
+                Files.write(Paths.get(nomeSaida), codigoAssembly.getBytes());
+                System.out.println("Arquivo Assembly gerado: " + nomeSaida);
             }
 
         } catch (Exception e) {
